@@ -1,3 +1,38 @@
+//! Module providing a trait and an extension trait to index a vector in the
+//! state.
+//!
+//! Example:
+//! ```
+//! use rust_state::{Context, ManuallyAssertExt, RustState, VecItem, VecLookupExt};
+//!
+//! #[derive(Debug, PartialEq, Eq)]
+//! struct TestItem {
+//!     id: u32,
+//! }
+//!
+//! impl VecItem for TestItem {
+//!     type Id = u32;
+//!
+//!     fn get_id(&self) -> Self::Id {
+//!         self.id
+//!     }
+//! }
+//!
+//! #[derive(RustState)]
+//! #[state_root]
+//! struct State {
+//!     items: Vec<TestItem>,
+//! }
+//!
+//! let context = Context::new(State {
+//!     items: vec![TestItem { id: 10 }],
+//! });
+//!
+//! let item_path = State::path().items().lookup(10);
+//!
+//! assert_eq!(context.try_get(&item_path), Some(&TestItem { id: 10 }));
+//! ```
+
 use std::hash::Hash;
 use std::marker::PhantomData;
 

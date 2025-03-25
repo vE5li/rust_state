@@ -1,3 +1,41 @@
+//! Module providing an extension trait to manually assert that a path is safe.
+//!
+//! This can be useful for situations where you select an item from a vector or
+//! map that you know exists.
+//!
+//! Example:
+//! ```
+//! use rust_state::{Context, ManuallyAssertExt, RustState, VecItem, VecLookupExt};
+//!
+//! struct TestItem {
+//!     id: u32,
+//! }
+//!
+//! impl VecItem for TestItem {
+//!     type Id = u32;
+//!
+//!     fn get_id(&self) -> Self::Id {
+//!         self.id
+//!     }
+//! }
+//!
+//! #[derive(RustState)]
+//! #[state_root]
+//! struct State {
+//!     items: Vec<TestItem>,
+//! }
+//!
+//! let context = Context::new(State {
+//!     items: vec![TestItem { id: 10 }],
+//! });
+//!
+//! // We *know* that our item exists, so we can wrap the path with `manually_asserted`.
+//! let item_path = State::path().items().lookup(10).manually_asserted();
+//!
+//! // We can use `get` since the path is safe.
+//! assert_eq!(context.get(&item_path).id, 10);
+//! ```
+
 use std::marker::PhantomData;
 
 use crate::{Path, Selector};

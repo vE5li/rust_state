@@ -1,3 +1,32 @@
+//! Module providing a trait and an extension trait to index a map in the state.
+//!
+//! Example:
+//! ```
+//! use std::collections::HashMap;
+//! use rust_state::{Context, ManuallyAssertExt, RustState, MapItem, MapLookupExt};
+//!
+//! #[derive(Debug, PartialEq, Eq)]
+//! struct TestItem;
+//!
+//! impl MapItem for TestItem {
+//!     type Id = u32;
+//! }
+//!
+//! #[derive(RustState)]
+//! #[state_root]
+//! struct State {
+//!     items: HashMap<u32, TestItem>,
+//! }
+//!
+//! let context = Context::new(State {
+//!     items: HashMap::from([(10, TestItem)]),
+//! });
+//!
+//! let item_path = State::path().items().lookup(10);
+//!
+//! assert_eq!(context.try_get(&item_path), Some(&TestItem));
+//! ```
+
 use std::collections::HashMap;
 use std::hash::Hash;
 use std::marker::PhantomData;

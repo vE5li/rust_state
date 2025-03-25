@@ -1,3 +1,6 @@
+//! Module providing the base mechanism for indexing state, namely [`Path`] and
+//! [`Selector`].
+
 /// A `Selector` can be used to get an item from the state or itself.
 ///
 /// `Selector<State, T>` is implemented for `T`, so any value is also a

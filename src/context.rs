@@ -1,3 +1,6 @@
+//! Module providing the [`Context`], which is the base type for state
+//! management.
+
 use std::cell::UnsafeCell;
 use std::collections::HashMap;
 
