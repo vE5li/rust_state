@@ -62,8 +62,7 @@ impl<State: StateMarker> Context<State> {
 
 impl<State> Context<State> {
     fn push_change(&self, state_change: StateChange<State>) {
-        let state_changes = UnsafeCell::raw_get(&self.state_changes as *const UnsafeCell<Vec<StateChange<State>>>);
-        let state_changes = unsafe { &mut *state_changes };
+        let state_changes = unsafe { &mut *self.state_changes.get() };
         state_changes.push(state_change);
     }
 
@@ -332,11 +331,12 @@ impl<State> Context<State> {
     /// value. This might happen if
     /// [`ManuallyAssertExt`](crate::ManuallyAssertExt) is used incorrectly
     /// or the [`Selector`](crate::Selector) trait is implemented incorrectly.
-    pub fn get<'a, Path, Output>(&'a self, path: &'a Path) -> &'a Output
+    pub fn get<'a, Selector, Output>(&'a self, selector: &'a Selector) -> &'a Output
     where
-        Path: crate::Selector<State, Output>,
+        Selector: crate::Selector<State, Output>,
+        Output: ?Sized,
     {
-        path.select(&self.state).unwrap()
+        selector.select(&self.state).unwrap()
     }
 
     /// Try to get the output of an unsafe selector.
@@ -347,11 +347,12 @@ impl<State> Context<State> {
     ///
     /// For a version of this function that accepts any selector see
     /// [`try_get_any`](Self::try_get_any).
-    pub fn try_get<'a, Path, Output>(&'a self, path: &'a Path) -> Option<&'a Output>
+    pub fn try_get<'a, Selector, Output>(&'a self, selector: &'a Selector) -> Option<&'a Output>
     where
-        Path: crate::Selector<State, Output, false>,
+        Selector: crate::Selector<State, Output, false>,
+        Output: ?Sized,
     {
-        path.select(&self.state)
+        selector.select(&self.state)
     }
 
     /// Try to get the output of any (safe or unsafe) selector.
@@ -361,10 +362,11 @@ impl<State> Context<State> {
     ///
     /// Please use [`get`](Self::get) and [`try_get`](Self::try_get)
     /// otherwise.
-    pub fn try_get_any<Path, Output, const SAFE: bool>(&self, path: Path) -> Option<&'_ Output>
+    pub fn try_get_any<Selector, Output, const SAFE: bool>(&self, selector: Selector) -> Option<&'_ Output>
     where
-        Path: crate::Path<State, Output, SAFE>,
+        Selector: crate::Path<State, Output, SAFE>,
+        Output: ?Sized,
     {
-        path.follow(&self.state)
+        selector.follow(&self.state)
     }
 }
