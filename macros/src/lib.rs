@@ -81,10 +81,13 @@ fn impl_for_root(ident: syn::Ident, generics: syn::Generics) -> TokenStream {
 }
 
 fn impl_for_inner(ident: syn::Ident, data: syn::Data, generics: syn::Generics) -> TokenStream {
-    let (impl_generics, type_generics, _where_clause) = generics.split_for_impl();
+    let (_impl_generics, type_generics, _where_clause) = generics.split_for_impl();
 
     let lifetimes = generics.lifetimes().map(|lifetime| quote!(&#lifetime ())).collect::<Vec<_>>();
     let type_params = generics.type_params().map(|type_param| quote!(#type_param)).collect::<Vec<_>>();
+
+    let ident_with_generics = type_generics.as_turbofish();
+    let ident_with_generics = quote!(#ident #ident_with_generics);
 
     let mut struct_generics = generics.clone();
     struct_generics.params.push(parse_quote!(S: 'static));
@@ -105,7 +108,7 @@ fn impl_for_inner(ident: syn::Ident, data: syn::Data, generics: syn::Generics) -
     path_generics.params.push(parse_quote!(S: 'static));
     path_generics
         .params
-        .push(parse_quote!(P: rust_state::Path<S, #ident #type_generics, SAFE>));
+        .push(parse_quote!(P: rust_state::Path<S, #ident_with_generics, SAFE>));
     path_generics.params.push(parse_quote!(const SAFE: bool));
     let (path_impl_generics, _, path_where_clause) = path_generics.split_for_impl();
 
@@ -113,7 +116,7 @@ fn impl_for_inner(ident: syn::Ident, data: syn::Data, generics: syn::Generics) -
     selector_generics.params.push(parse_quote!(S: 'static));
     selector_generics
         .params
-        .push(parse_quote!(P: rust_state::Path<S, #ident #type_generics, SAFE>));
+        .push(parse_quote!(P: rust_state::Path<S, #ident_with_generics, SAFE>));
     selector_generics.params.push(parse_quote!(const SAFE: bool));
     let (selector_impl_generics, _, selector_where_clause) = selector_generics.split_for_impl();
 
@@ -145,6 +148,8 @@ fn impl_for_inner(ident: syn::Ident, data: syn::Data, generics: syn::Generics) -
 
                         impl #struct_impl_generics Copy for AnonymousPath #struct_type_generics #clone_where_clause {}
 
+                        impl #struct_creation_generics !rust_state::AutoImplSelector for AnonymousPath #struct_type_generics #struct_where_clause {}
+
                         impl #path_impl_generics rust_state::Path<S, #field_type, SAFE> for AnonymousPath #struct_type_generics #path_where_clause {
                             fn follow<'a>(&self, state: &'a S) -> Option<&'a #field_type> {
                                 Some(&self.path.follow(state)?.#field_name)
@@ -170,15 +175,29 @@ fn impl_for_inner(ident: syn::Ident, data: syn::Data, generics: syn::Generics) -
         syn::Data::Union(_) => todo!(),
     }
 
+    // let turboed_generics = add_turbo_fish(type_generics.to_token_stream());
+
+    let mut extension_trait_generics = generics.clone();
+    extension_trait_generics.params.push(parse_quote!(StateTwo: 'static));
+    extension_trait_generics.params.push(parse_quote!(const SAFE: bool));
+    let (extension_trait_impl_generics, extension_trait_type_generics, extension_trait_where_clause) =
+        extension_trait_generics.split_for_impl();
+
+    let mut extension_trait_implement_generics = generics.clone();
+    extension_trait_implement_generics
+        .params
+        .push(parse_quote!(ImplFor: rust_state::Path<StateTwo, #ident_with_generics, SAFE>));
+    extension_trait_implement_generics.params.push(parse_quote!(StateTwo: 'static));
+    extension_trait_implement_generics.params.push(parse_quote!(const SAFE: bool));
+    let (extension_trait_implement_impl_generics, _extension_trait_implement_type_generics, extension_trait_implement_where_clause) =
+        extension_trait_implement_generics.split_for_impl();
+
     quote_spanned! { Span::mixed_site() =>
-        pub trait #extension_trait_name<StateTwo: 'static, const SAFE: bool>: rust_state::Path<StateTwo, #ident, SAFE> {
+        pub trait #extension_trait_name #extension_trait_impl_generics: rust_state::Path<StateTwo, #ident_with_generics, SAFE> #extension_trait_where_clause {
             #(#extension_trait_methods)*
         }
 
-        impl<StateTwo, T, const SAFE: bool> #impl_generics #extension_trait_name<StateTwo, SAFE> for T
-            where
-                StateTwo: 'static,
-                T: rust_state::Path<StateTwo, #ident, SAFE>,
+        impl #extension_trait_implement_impl_generics #extension_trait_name #extension_trait_type_generics for ImplFor #extension_trait_implement_where_clause
             {}
     }
 }

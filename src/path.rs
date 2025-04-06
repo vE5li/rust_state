@@ -44,8 +44,18 @@ pub trait Selector<State, To: ?Sized, const SAFE: bool = true>: 'static {
     fn select<'a>(&'a self, state: &'a State) -> Option<&'a To>;
 }
 
+/// Workaround for conflicting implementations when implementing [`Path`] for
+/// generic types.
+///
+/// Currently this is only used when deriving [`RustState`](crate::RustState)
+/// but can hopefully be completely removed in the future.
+pub auto trait AutoImplSelector {}
+
 // Blanket implementation so that any `T` is a `Selector` for `T`.
-impl<State, T: 'static> Selector<State, T> for T {
+impl<State, T: 'static> Selector<State, T> for T
+where
+    T: AutoImplSelector,
+{
     fn select<'a>(&'a self, _: &'a State) -> Option<&'a T> {
         Some(self)
     }
@@ -77,6 +87,28 @@ impl<State, T: 'static> Selector<State, T> for T {
 ///
 /// takes_path::<GlobalState>(GlobalState::path());
 /// takes_path::<u32>(GlobalState::path().number());
+/// ```
+///
+/// Paths can also be generated for generic types:
+///
+/// ```
+/// use rust_state::{Context, RustState, Path};
+///
+/// #[derive(Default, RustState)]
+/// #[state_root]
+/// struct GlobalState {
+///     generic: GenericStruct<u32>,
+/// }
+///
+/// #[derive(Default, RustState)]
+/// struct GenericStruct<T>
+/// where
+///     T: Default + 'static
+/// {
+///     inner: T,
+/// }
+///
+/// let path = GlobalState::path().generic();
 /// ```
 pub trait Path<State, To: ?Sized, const SAFE: bool = true>: Selector<State, To, SAFE> + Copy {
     /// Follow the path and try to return a reference to its target.
