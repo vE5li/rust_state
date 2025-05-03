@@ -1,6 +1,15 @@
 //! Module providing a trait and an extension trait to index a vector in the
 //! state.
 //!
+//! There are two main ways to get the items of a [`Vec`]:
+//!
+//! `Indexing the vector`: This work for every vector of T but the item the path
+//! resolves to might change if the state changes.
+//!
+//!
+//! `A lookup`: This is a bit slower and only for `Vec<T> where T: VecItem` but
+//! resolves to the same item every time.
+//!
 //! Example:
 //! ```
 //! use rust_state::{Context, ManuallyAssertExt, RustState, VecItem, VecLookupExt};
@@ -28,9 +37,13 @@
 //!     items: vec![TestItem { id: 10 }],
 //! });
 //!
-//! let item_path = State::path().items().lookup(10);
+//! let lookup_path = State::path().items().lookup(10);
 //!
-//! assert_eq!(context.try_get(&item_path), Some(&TestItem { id: 10 }));
+//! assert_eq!(context.try_get(&lookup_path), Some(&TestItem { id: 10 }));
+//!
+//! let index_path = State::path().items().index(0);
+//!
+//! assert_eq!(context.try_get(&index_path), Some(&TestItem { id: 10 }));
 //! ```
 
 use std::hash::Hash;
@@ -128,5 +141,84 @@ where
     State: 'static,
     T: Path<State, Vec<Item>, SAFE>,
     Item: VecItem + 'static,
+{
+}
+
+/// A path for doing a dynamic index into a [`Vec`].
+///
+/// This type is not accessible outside this module, instead
+/// [`VecIndexExt`] can be used to construct it and receive a `impl
+/// Path<State, Item>`.
+struct VecIndex<State, VectorPath, Item, const SAFE: bool> {
+    vector_path: VectorPath,
+    index: usize,
+    _marker: PhantomData<(State, Item)>,
+}
+
+impl<State, VectorPath, Item, const SAFE: bool> Clone for VecIndex<State, VectorPath, Item, SAFE>
+where
+    State: 'static,
+    VectorPath: Path<State, Vec<Item>, SAFE>,
+    Item: 'static,
+{
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+impl<State, VectorPath, Item, const SAFE: bool> Copy for VecIndex<State, VectorPath, Item, SAFE>
+where
+    State: 'static,
+    VectorPath: Path<State, Vec<Item>, SAFE>,
+    Item: 'static,
+{
+}
+
+impl<State, VectorPath, Item, const SAFE: bool> Selector<State, Item, false> for VecIndex<State, VectorPath, Item, SAFE>
+where
+    State: 'static,
+    VectorPath: Path<State, Vec<Item>, SAFE>,
+    Item: 'static,
+{
+    fn select<'a>(&'a self, state: &'a State) -> Option<&'a Item> {
+        self.follow(state)
+    }
+}
+
+impl<State, VectorPath, Item, const SAFE: bool> Path<State, Item, false> for VecIndex<State, VectorPath, Item, SAFE>
+where
+    State: 'static,
+    VectorPath: Path<State, Vec<Item>, SAFE>,
+    Item: 'static,
+{
+    fn follow<'a>(&self, state: &'a State) -> Option<&'a Item> {
+        self.vector_path.follow(state)?.get(self.index)
+    }
+
+    fn follow_mut<'a>(&self, state: &'a mut State) -> Option<&'a mut Item> {
+        self.vector_path.follow_mut(state)?.get_mut(self.index)
+    }
+}
+
+pub trait VecIndexExt<State, T, Item, const SAFE: bool>
+where
+    State: 'static,
+    Self: Path<State, Vec<Item>, SAFE>,
+    Item: 'static,
+{
+    fn index(self, index: usize) -> impl Path<State, Item, false> {
+        VecIndex {
+            vector_path: self,
+            index,
+            _marker: PhantomData,
+        }
+    }
+}
+
+impl<State, T, Item, const SAFE: bool> VecIndexExt<State, T, Item, SAFE> for T
+where
+    State: 'static,
+    T: Path<State, Vec<Item>, SAFE>,
+    Item: 'static,
 {
 }

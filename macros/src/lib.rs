@@ -6,7 +6,7 @@ use quote::{ToTokens, quote, quote_spanned};
 use syn::{DeriveInput, parse_quote};
 
 #[proc_macro_derive(RustState, attributes(state_root))]
-pub fn derive_prototype_element(token_stream: InterfaceTokenStream) -> InterfaceTokenStream {
+pub fn derive_rust_state(token_stream: InterfaceTokenStream) -> InterfaceTokenStream {
     let DeriveInput {
         ident,
         attrs,
@@ -125,12 +125,13 @@ fn impl_for_inner(ident: syn::Ident, data: syn::Data, generics: syn::Generics) -
     let mut extension_trait_methods = Vec::new();
 
     match data {
-        syn::Data::Struct(data_struct) => {
-            for field in data_struct.fields.into_iter() {
-                let field_name = field.ident.as_ref().unwrap();
-                let field_type = field.ty;
+        syn::Data::Struct(data_struct) => match data_struct.fields {
+            fields @ syn::Fields::Named(_) => {
+                for field in fields.into_iter() {
+                    let field_name = field.ident.as_ref().unwrap();
+                    let field_type = field.ty;
 
-                extension_trait_methods.push(quote_spanned! { Span::mixed_site() =>
+                    extension_trait_methods.push(quote_spanned! { Span::mixed_site() =>
                     fn #field_name(self) -> impl rust_state::Path<StateTwo, #field_type, SAFE> {
                         pub struct AnonymousPath #struct_creation_generics #struct_where_clause {
                             path: P,
@@ -169,9 +170,63 @@ fn impl_for_inner(ident: syn::Ident, data: syn::Data, generics: syn::Generics) -
                         AnonymousPath { path: self, _marker: std::marker::PhantomData }
                     }
                 });
+                }
             }
+            fields @ syn::Fields::Unnamed(_) => {
+                for (index, field) in fields.into_iter().enumerate() {
+                    let field_name = syn::Ident::new(&format!("_{index}"), Span::call_site());
+                    let field_type = field.ty;
+
+                    let field_index = syn::LitInt::new(&index.to_string(), Span::call_site());
+
+                    extension_trait_methods.push(quote_spanned! { Span::mixed_site() =>
+                    fn #field_name(self) -> impl rust_state::Path<StateTwo, #field_type, SAFE> {
+                        pub struct AnonymousPath #struct_creation_generics #struct_where_clause {
+                            path: P,
+                            _marker: std::marker::PhantomData<(S, #(#lifetimes,)* #(#type_params,)*)>,
+                        }
+
+                        impl #struct_impl_generics Clone for AnonymousPath #struct_type_generics #clone_where_clause {
+                            fn clone(&self) -> Self {
+                                Self {
+                                    path: self.path,
+                                    _marker: std::marker::PhantomData,
+                                }
+                            }
+                        }
+
+                        impl #struct_impl_generics Copy for AnonymousPath #struct_type_generics #clone_where_clause {}
+
+                        impl #struct_creation_generics !rust_state::AutoImplSelector for AnonymousPath #struct_type_generics #struct_where_clause {}
+
+                        impl #path_impl_generics rust_state::Path<S, #field_type, SAFE> for AnonymousPath #struct_type_generics #path_where_clause {
+                            fn follow<'a>(&self, state: &'a S) -> Option<&'a #field_type> {
+                                Some(&self.path.follow(state)?.#field_index)
+                            }
+
+                            fn follow_mut<'a>(&self, state: &'a mut S) -> Option<&'a mut #field_type> {
+                                Some(&mut self.path.follow_mut(state)?.#field_index)
+                            }
+                        }
+
+                        impl #selector_impl_generics rust_state::Selector<S, #field_type, SAFE> for AnonymousPath #struct_type_generics #selector_where_clause {
+                            fn select<'a>(&'a self, state: &'a S) -> Option<&'a #field_type> {
+                                <Self as rust_state::Path<S, #field_type, SAFE>>::follow(self, state)
+                            }
+                        }
+
+                        AnonymousPath { path: self, _marker: std::marker::PhantomData }
+                    }
+                });
+                }
+            }
+
+            syn::Fields::Unit => {}
+        },
+        syn::Data::Enum(data_enum) => {
+            // extension_trait_methods.push(quote_spanned! { Span::mixed_site()
+            // => });
         }
-        syn::Data::Enum(_) => todo!(),
         syn::Data::Union(_) => todo!(),
     }
 

@@ -254,6 +254,47 @@ impl<State> Context<State> {
         }));
     }
 
+    /// Insert an item with default value into a [`HashMap`].
+    ///
+    /// Example:
+    /// ```
+    /// use std::collections::HashMap;
+    /// use rust_state::{Context, RustState, MapItem};
+    ///
+    /// #[derive(Default)]
+    /// struct TestItem;
+    //
+    /// impl MapItem for TestItem {
+    ///     type Id = u32;
+    /// }
+    ///
+    /// #[derive(RustState)]
+    /// #[state_root]
+    /// struct MyState {
+    ///     items: HashMap<u32, TestItem>,
+    /// }
+    ///
+    /// let mut context = Context::new(MyState { items: HashMap::new() });
+    /// let items_path = MyState::path().items();
+    ///
+    /// context.map_insert_default(items_path, 10);
+    /// context.apply();
+    ///
+    /// assert_eq!(context.get(&items_path).len(), 1);
+    /// ```
+    pub fn map_insert_default<Path, Value>(&self, path: Path, id: Value::Id)
+    where
+        Path: crate::Path<State, HashMap<Value::Id, Value>>,
+        Value: MapItem + Default + 'static,
+    {
+        self.push_change(Box::new(move |state: &mut State| match path.follow_mut(state) {
+            Some(reference) => {
+                reference.entry(id).or_default();
+            }
+            None => println!("Failed to update state"),
+        }));
+    }
+
     /// Remove an item from a [`HashMap`].
     ///
     /// Example:
