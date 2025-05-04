@@ -410,4 +410,51 @@ impl<State> Context<State> {
     {
         selector.follow(&self.state)
     }
+
+    /// Follow a safe path.
+    ///
+    /// # Panics
+    ///
+    /// This function will panic if the safe path was unable to read the
+    /// value. This might happen if
+    /// [`ManuallyAssertExt`](crate::ManuallyAssertExt) is used incorrectly
+    /// or the [`Path`](crate::Path) trait is implemented incorrectly.
+    pub fn follow<Path, Output>(&self, path: Path) -> &Output
+    where
+        Path: crate::Path<State, Output>,
+        Output: ?Sized,
+    {
+        path.follow(&self.state).unwrap()
+    }
+
+    /// Try to follow an unsafe path.
+    ///
+    /// This is deliberately only implement for unsafe paths and not for
+    /// all paths to encourage using the safe [`follow`](Self::follow)
+    /// if possible.
+    ///
+    /// For a version of this function that accepts any path see
+    /// [`try_follow_any`](Self::try_follow_any).
+    pub fn try_follow<Path, Output>(&self, path: Path) -> Option<&Output>
+    where
+        Path: crate::Path<State, Output, false>,
+        Output: ?Sized,
+    {
+        path.follow(&self.state)
+    }
+
+    /// Try to follow any (safe or unsafe) path.
+    ///
+    /// Use of this function is discouraged unless `SAFE` is not known in
+    /// the current scope.
+    ///
+    /// Please use [`follow`](Self::follow) and [`try_follow`](Self::try_follow)
+    /// otherwise.
+    pub fn try_follow_any<Path, Output, const SAFE: bool>(&self, path: Path) -> Option<&Output>
+    where
+        Path: crate::Path<State, Output, SAFE>,
+        Output: ?Sized,
+    {
+        path.follow(&self.state)
+    }
 }
