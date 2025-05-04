@@ -457,4 +457,51 @@ impl<State> Context<State> {
     {
         path.follow(&self.state)
     }
+
+    /// Follow a safe path.
+    ///
+    /// # Panics
+    ///
+    /// This function will panic if the safe path was unable to read the
+    /// value. This might happen if
+    /// [`ManuallyAssertExt`](crate::ManuallyAssertExt) is used incorrectly
+    /// or the [`Path`](crate::Path) trait is implemented incorrectly.
+    pub fn follow_mut<Path, Output>(&mut self, path: Path) -> &mut Output
+    where
+        Path: crate::Path<State, Output>,
+        Output: ?Sized,
+    {
+        path.follow_mut(&mut self.state).unwrap()
+    }
+
+    /// Try to follow an unsafe path.
+    ///
+    /// This is deliberately only implement for unsafe paths and not for
+    /// all paths to encourage using the safe [`follow_mut`](Self::follow_mut)
+    /// if possible.
+    ///
+    /// For a version of this function that accepts any path see
+    /// [`try_follow_any_mut`](Self::try_follow_any_mut).
+    pub fn try_follow_mut<Path, Output>(&mut self, path: Path) -> Option<&mut Output>
+    where
+        Path: crate::Path<State, Output, false>,
+        Output: ?Sized,
+    {
+        path.follow_mut(&mut self.state)
+    }
+
+    /// Try to follow any (safe or unsafe) path.
+    ///
+    /// Use of this function is discouraged unless `SAFE` is not known in
+    /// the current scope.
+    ///
+    /// Please use [`follow`](Self::follow_mut) and
+    /// [`try_follow`](Self::try_follow_mut) otherwise.
+    pub fn try_follow_any_mut<Path, Output, const SAFE: bool>(&mut self, path: Path) -> Option<&mut Output>
+    where
+        Path: crate::Path<State, Output, SAFE>,
+        Output: ?Sized,
+    {
+        path.follow_mut(&mut self.state)
+    }
 }
