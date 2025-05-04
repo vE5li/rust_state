@@ -86,9 +86,9 @@ impl<State> Context<State> {
     ///
     /// assert_eq!(context.get(&value_path), &10);
     /// ```
-    pub fn update_value<Path, Value>(&self, path: Path, value: Value)
+    pub fn update_value<Path, Value, const SAFE: bool>(&self, path: Path, value: Value)
     where
-        Path: crate::Path<State, Value>,
+        Path: crate::Path<State, Value, SAFE>,
         Value: 'static,
     {
         self.push_change(Box::new(move |state: &mut State| match path.follow_mut(state) {
@@ -117,9 +117,9 @@ impl<State> Context<State> {
     ///
     /// assert_eq!(context.get(&value_path), &10);
     /// ```
-    pub fn update_value_with<Path, Value, F>(&self, path: Path, closure: F)
+    pub fn update_value_with<Path, Value, F, const SAFE: bool>(&self, path: Path, closure: F)
     where
-        Path: crate::Path<State, Value>,
+        Path: crate::Path<State, Value, SAFE>,
         F: Fn(&mut Value) + 'static,
     {
         self.push_change(Box::new(move |state: &mut State| match path.follow_mut(state) {
@@ -160,9 +160,9 @@ impl<State> Context<State> {
     ///
     /// assert_eq!(context.get(&items_path).len(), 1);
     /// ```
-    pub fn vec_push<Path, Value>(&self, path: Path, value: Value)
+    pub fn vec_push<Path, Value, const SAFE: bool>(&self, path: Path, value: Value)
     where
-        Path: crate::Path<State, Vec<Value>>,
+        Path: crate::Path<State, Vec<Value>, SAFE>,
         Value: 'static,
     {
         self.push_change(Box::new(move |state: &mut State| match path.follow_mut(state) {
@@ -203,9 +203,9 @@ impl<State> Context<State> {
     ///
     /// assert_eq!(context.get(&items_path).len(), 0);
     /// ```
-    pub fn vec_remove<Path, Value>(&self, path: Path, id: Value::Id)
+    pub fn vec_remove<Path, Value, const SAFE: bool>(&self, path: Path, id: Value::Id)
     where
-        Path: crate::Path<State, Vec<Value>>,
+        Path: crate::Path<State, Vec<Value>, SAFE>,
         Value: VecItem + 'static,
     {
         self.push_change(Box::new(move |state: &mut State| match path.follow_mut(state) {
@@ -241,9 +241,9 @@ impl<State> Context<State> {
     ///
     /// assert_eq!(context.get(&items_path).len(), 1);
     /// ```
-    pub fn map_insert<Path, Value>(&self, path: Path, id: Value::Id, value: Value)
+    pub fn map_insert<Path, Value, const SAFE: bool>(&self, path: Path, id: Value::Id, value: Value)
     where
-        Path: crate::Path<State, HashMap<Value::Id, Value>>,
+        Path: crate::Path<State, HashMap<Value::Id, Value>, SAFE>,
         Value: MapItem + 'static,
     {
         self.push_change(Box::new(move |state: &mut State| match path.follow_mut(state) {
@@ -282,9 +282,9 @@ impl<State> Context<State> {
     ///
     /// assert_eq!(context.get(&items_path).len(), 1);
     /// ```
-    pub fn map_insert_default<Path, Value>(&self, path: Path, id: Value::Id)
+    pub fn map_insert_default<Path, Value, const SAFE: bool>(&self, path: Path, id: Value::Id)
     where
-        Path: crate::Path<State, HashMap<Value::Id, Value>>,
+        Path: crate::Path<State, HashMap<Value::Id, Value>, SAFE>,
         Value: MapItem + Default + 'static,
     {
         self.push_change(Box::new(move |state: &mut State| match path.follow_mut(state) {
@@ -322,9 +322,9 @@ impl<State> Context<State> {
     ///
     /// assert_eq!(context.get(&items_path).len(), 0);
     /// ```
-    pub fn map_remove<Path, Value>(&self, path: Path, id: Value::Id)
+    pub fn map_remove<Path, Value, const SAFE: bool>(&self, path: Path, id: Value::Id)
     where
-        Path: crate::Path<State, HashMap<Value::Id, Value>>,
+        Path: crate::Path<State, HashMap<Value::Id, Value>, SAFE>,
         Value: MapItem + 'static,
     {
         self.push_change(Box::new(move |state: &mut State| match path.follow_mut(state) {
