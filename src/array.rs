@@ -37,7 +37,6 @@ struct ArrayLookup<State, ArrayPath, Item, const N: usize, const SAFE: bool> {
 
 impl<State, ArrayPath, Item, const N: usize, const SAFE: bool> Clone for ArrayLookup<State, ArrayPath, Item, N, SAFE>
 where
-    State: 'static,
     ArrayPath: Path<State, [Item; N], SAFE>,
 {
     fn clone(&self) -> Self {
@@ -45,10 +44,8 @@ where
     }
 }
 
-impl<State, ArrayPath, Item, const N: usize, const SAFE: bool> Copy for ArrayLookup<State, ArrayPath, Item, N, SAFE>
-where
-    State: 'static,
-    ArrayPath: Path<State, [Item; N], SAFE>,
+impl<State, ArrayPath, Item, const N: usize, const SAFE: bool> Copy for ArrayLookup<State, ArrayPath, Item, N, SAFE> where
+    ArrayPath: Path<State, [Item; N], SAFE>
 {
 }
 

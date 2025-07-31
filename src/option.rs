@@ -43,20 +43,15 @@ struct OptionUnwrapped<State, OptionPath, Unwrapped, const SAFE: bool> {
 
 impl<State, OptionPath, Unwrapped, const SAFE: bool> Clone for OptionUnwrapped<State, OptionPath, Unwrapped, SAFE>
 where
-    State: 'static,
     OptionPath: Path<State, Option<Unwrapped>, SAFE>,
-    Unwrapped: 'static,
 {
     fn clone(&self) -> Self {
         *self
     }
 }
 
-impl<State, OptionPath, Unwrapped, const SAFE: bool> Copy for OptionUnwrapped<State, OptionPath, Unwrapped, SAFE>
-where
-    State: 'static,
-    OptionPath: Path<State, Option<Unwrapped>, SAFE>,
-    Unwrapped: 'static,
+impl<State, OptionPath, Unwrapped, const SAFE: bool> Copy for OptionUnwrapped<State, OptionPath, Unwrapped, SAFE> where
+    OptionPath: Path<State, Option<Unwrapped>, SAFE>
 {
 }
 

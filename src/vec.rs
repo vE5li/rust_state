@@ -78,9 +78,8 @@ where
 
 impl<State, VectorPath, Item, const SAFE: bool> Clone for VecLookup<State, VectorPath, Item, SAFE>
 where
-    State: 'static,
     VectorPath: Path<State, Vec<Item>, SAFE>,
-    Item: VecItem + 'static,
+    Item: VecItem,
 {
     fn clone(&self) -> Self {
         *self
@@ -89,9 +88,8 @@ where
 
 impl<State, VectorPath, Item, const SAFE: bool> Copy for VecLookup<State, VectorPath, Item, SAFE>
 where
-    State: 'static,
     VectorPath: Path<State, Vec<Item>, SAFE>,
-    Item: VecItem + 'static,
+    Item: VecItem,
 {
 }
 
@@ -157,20 +155,15 @@ struct VecIndex<State, VectorPath, Item, const SAFE: bool> {
 
 impl<State, VectorPath, Item, const SAFE: bool> Clone for VecIndex<State, VectorPath, Item, SAFE>
 where
-    State: 'static,
     VectorPath: Path<State, Vec<Item>, SAFE>,
-    Item: 'static,
 {
     fn clone(&self) -> Self {
         *self
     }
 }
 
-impl<State, VectorPath, Item, const SAFE: bool> Copy for VecIndex<State, VectorPath, Item, SAFE>
-where
-    State: 'static,
-    VectorPath: Path<State, Vec<Item>, SAFE>,
-    Item: 'static,
+impl<State, VectorPath, Item, const SAFE: bool> Copy for VecIndex<State, VectorPath, Item, SAFE> where
+    VectorPath: Path<State, Vec<Item>, SAFE>
 {
 }
 

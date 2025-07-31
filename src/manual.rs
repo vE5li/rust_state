@@ -47,7 +47,6 @@ struct ManuallyAsserted<State, AssertedPath, To> {
 
 impl<State, AssertedPath, To> Clone for ManuallyAsserted<State, AssertedPath, To>
 where
-    State: 'static,
     AssertedPath: Path<State, To, false>,
 {
     fn clone(&self) -> Self {
@@ -55,12 +54,7 @@ where
     }
 }
 
-impl<State, AssertedPath, To> Copy for ManuallyAsserted<State, AssertedPath, To>
-where
-    State: 'static,
-    AssertedPath: Path<State, To, false>,
-{
-}
+impl<State, AssertedPath, To> Copy for ManuallyAsserted<State, AssertedPath, To> where AssertedPath: Path<State, To, false> {}
 
 impl<State, AssertedPath, To> Selector<State, To> for ManuallyAsserted<State, AssertedPath, To>
 where
