@@ -1,5 +1,3 @@
-#![feature(extract_if)]
-
 use proc_macro::TokenStream as InterfaceTokenStream;
 use proc_macro2::{Span, TokenStream};
 use quote::{ToTokens, quote, quote_spanned};
@@ -37,7 +35,7 @@ fn impl_for_root(ident: syn::Ident, generics: syn::Generics) -> TokenStream {
 
     let (impl_generics, type_generics, where_clause) = generics.split_for_impl();
 
-    let extension_trait_name = syn::Ident::new(&format!("{}RootExt", ident), ident.span());
+    let extension_trait_name = syn::Ident::new(&format!("{ident}RootExt"), ident.span());
 
     quote_spanned! { Span::mixed_site() =>
         impl #impl_generics rust_state::StateMarker for #ident #type_generics #where_clause {}
@@ -120,7 +118,7 @@ fn impl_for_inner(ident: syn::Ident, data: syn::Data, generics: syn::Generics) -
     selector_generics.params.push(parse_quote!(const SAFE: bool));
     let (selector_impl_generics, _, selector_where_clause) = selector_generics.split_for_impl();
 
-    let extension_trait_name = syn::Ident::new(&format!("{}PathExt", ident), ident.span());
+    let extension_trait_name = syn::Ident::new(&format!("{ident}PathExt"), ident.span());
 
     let mut extension_trait_methods = Vec::new();
 
@@ -223,7 +221,7 @@ fn impl_for_inner(ident: syn::Ident, data: syn::Data, generics: syn::Generics) -
 
             syn::Fields::Unit => {}
         },
-        syn::Data::Enum(data_enum) => {
+        syn::Data::Enum(_) => {
             // extension_trait_methods.push(quote_spanned! { Span::mixed_site()
             // => });
         }
