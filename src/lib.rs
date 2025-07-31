@@ -5,7 +5,7 @@
 extern crate self as rust_state;
 
 mod array;
-mod boxed;
+mod as_ref;
 mod context;
 mod downcast;
 mod manual;
@@ -15,7 +15,7 @@ mod path;
 mod vec;
 
 pub use array::ArrayLookupExt;
-pub use boxed::BoxedExt;
+pub use as_ref::AsRefExt;
 pub use context::{Context, StateMarker};
 pub use downcast::DowncastExt;
 pub use macros::RustState;
